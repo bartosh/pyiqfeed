@@ -74,10 +74,10 @@ class FeedService:
     """
 
     def __init__(self,
-                 product: str,
-                 version: str,
-                 login: str,
-                 password: str):
+                 product,
+                 version,
+                 login,
+                 password):
         """
         Initialize the FeedService class.
 
@@ -93,10 +93,10 @@ class FeedService:
         self.password = password
 
     def launch(self,
-               timeout: int=20,
-               check_conn: bool = True,
-               headless: bool = False,
-               nohup: bool = True) -> None:
+               timeout=20,
+               check_conn = True,
+               headless = False,
+               nohup = True):
         """
         Launch IQConnect.exe if necessary
 

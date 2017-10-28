@@ -5,13 +5,12 @@ Functions used to parse individual fields in the feed.
 
 """
 
-from typing import Union, Tuple
 import datetime
 import numpy as np
 from pyiqfeed.exceptions import UnexpectedField
 
 
-def blob_to_str(val) -> str:
+def blob_to_str(val):
     """Convert a blob to a string or a blank."""
     if val is None:
         return ""
@@ -19,7 +18,7 @@ def blob_to_str(val) -> str:
         return str(val)
 
 
-def read_is_market_open(field: str) -> bool:
+def read_is_market_open(field):
     """
     Return True if the relevant market is open.
 
@@ -29,7 +28,7 @@ def read_is_market_open(field: str) -> bool:
     return bool(int(field)) if field != "" else False
 
 
-def read_is_short_restricted(field: str) -> bool:
+def read_is_short_restricted(field):
     """Return True if the stock cannot be sold short."""
     if field != "":
         if field == 'Y':
@@ -43,7 +42,7 @@ def read_is_short_restricted(field: str) -> bool:
         return False
 
 
-def read_tick_direction(field: str) -> np.int8:
+def read_tick_direction(field):
     """
     1 if last tick was an uptick, -1 for downtick, 0 for zero-tick.
 
@@ -64,43 +63,42 @@ def read_tick_direction(field: str) -> np.int8:
         return np.int8(0)
 
 
-def read_int(field: str) -> int:
+def read_int(field):
     """Read an integer."""
     return int(field) if field != "" else 0
 
 
-def read_hex(field: str) -> int:
+def read_hex(field):
     """Read a hexadecimal integer."""
     return int(field, 16) if field != "" else 0
 
 
-def read_uint8(field: str) -> np.uint8:
+def read_uint8(field):
     """Read a uint8."""
     return np.uint8(field) if field != "" else 0
 
 
-def read_uint16(field: str) -> np.uint16:
+def read_uint16(field):
     """Read a uint16."""
     return np.uint16(field) if field != "" else 0
 
 
-def read_uint64(field: str) -> np.uint64:
+def read_uint64(field):
     """Read a uint64."""
     return np.uint64(field) if field != "" else 0
 
 
-def read_float(field: str) -> float:
+def read_float(field):
     """Read a float."""
     return float(field) if field != "" else float('nan')
 
 
-def read_float64(field: str) -> np.float64:
+def read_float64(field):
     """Read a float64."""
     return np.float64(field) if field != "" else np.nan
 
 
-def read_split_string(split_str: str) -> Tuple[np.float64,
-                                                      np.datetime64]:
+def read_split_string(split_str):
     """Read a field that encodes the last split date and last split factor."""
     split_fld_0, split_fld_1 = ("", "")
     if split_str != "":
@@ -111,7 +109,7 @@ def read_split_string(split_str: str) -> Tuple[np.float64,
     return split_data
 
 
-def read_hhmmss_no_colon(field: str) -> int:
+def read_hhmmss_no_colon(field):
     """Read a HH:MM:SS field and return us since midnight."""
     if field != "":
         hour = int(field[0:2])
@@ -122,7 +120,7 @@ def read_hhmmss_no_colon(field: str) -> int:
         return 0
 
 
-def read_hhmmss(field: str) -> int:
+def read_hhmmss(field):
     """Read a HH:MM:SS field and return us since midnight."""
     if field != "":
         hour = int(field[0:2])
@@ -133,7 +131,7 @@ def read_hhmmss(field: str) -> int:
         return 0
 
 
-def read_hhmmssmil(field: str) -> int:
+def read_hhmmssmil(field):
     """Read a HH:MM:SS:MILL field and return us since midnight."""
     if field != "":
         hour = int(field[0:2])
@@ -146,7 +144,7 @@ def read_hhmmssmil(field: str) -> int:
         return 0
 
 
-def read_hhmmssus(field: str) -> int:
+def read_hhmmssus(field):
     """Read a HH:MM:SS.us field and return us since midnight."""
     if field != "":
         hour = int(field[0:2])
@@ -158,7 +156,7 @@ def read_hhmmssus(field: str) -> int:
         return 0
 
 
-def read_mmddccyy(field: str) -> np.datetime64:
+def read_mmddccyy(field):
     """Read a MM-DD-CCYY field and return a np.datetime64('D') type."""
     if field != "":
         month = int(field[0:2])
@@ -170,7 +168,7 @@ def read_mmddccyy(field: str) -> np.datetime64:
         return np.datetime64(datetime.date(year=1, month=1, day=1), 'D')
 
 
-def read_ccyymmdd(field: str) -> np.datetime64:
+def read_ccyymmdd(field):
     """Read a CCYYMMDD field and return a np.datetime64('D') type."""
     if field != "":
         year = int(field[0:4])
@@ -182,7 +180,7 @@ def read_ccyymmdd(field: str) -> np.datetime64:
         return np.datetime64(datetime.date(year=1, month=1, day=1), 'D')
 
 
-def read_timestamp_msg(dt_tm: str) -> Tuple[np.datetime64, int]:
+def read_timestamp_msg(dt_tm):
     """Read a CCYYMMDD HH:MM:SS field."""
     if dt_tm != "":
         (date_str, time_str) = dt_tm.split(' ')
@@ -193,7 +191,7 @@ def read_timestamp_msg(dt_tm: str) -> Tuple[np.datetime64, int]:
         return np.datetime64(datetime.date(year=1, month=1, day=1), 'D'), 0
 
 
-def read_live_news_timestamp(dt_tm: str) -> Tuple[np.datetime64, int]:
+def read_live_news_timestamp(dt_tm):
     """Read a CCYYMMDD HH:MM:SS field."""
     if dt_tm != "":
         (date_str, time_str) = dt_tm.split(' ')
@@ -204,7 +202,7 @@ def read_live_news_timestamp(dt_tm: str) -> Tuple[np.datetime64, int]:
         return np.datetime64(datetime.date(year=1, month=1, day=1), 'D'), 0
 
 
-def read_hist_news_timestamp(dt_tm: str) -> Tuple[np.datetime64, int]:
+def read_hist_news_timestamp(dt_tm):
     """Read a news story time"""
     if dt_tm != "":
         date_str = dt_tm[0:8]
@@ -216,7 +214,7 @@ def read_hist_news_timestamp(dt_tm: str) -> Tuple[np.datetime64, int]:
         return np.datetime64(datetime.date(year=1, month=1, day=1), 'D'), 0
 
 
-def read_posix_ts_mil(dt_tm_str: str) -> Tuple[np.datetime64, int]:
+def read_posix_ts_mil(dt_tm_str):
     """ Read a POSIX-Date HH:MM:SS:MILL field."""
     if dt_tm_str != "":
         (date_str, time_str) = dt_tm_str.split(" ")
@@ -227,7 +225,7 @@ def read_posix_ts_mil(dt_tm_str: str) -> Tuple[np.datetime64, int]:
         return np.datetime64(datetime.date(year=1, month=1, day=1), 'D'), 0
 
 
-def read_posix_ts_us(dt_tm_str: str) -> Tuple[np.datetime64, int]:
+def read_posix_ts_us(dt_tm_str):
     """ Read a POSIX-Date HH:MM:SS:us field."""
     if dt_tm_str != "":
         (date_str, time_str) = dt_tm_str.split(" ")
@@ -238,7 +236,7 @@ def read_posix_ts_us(dt_tm_str: str) -> Tuple[np.datetime64, int]:
         return np.datetime64(datetime.date(year=1, month=1, day=1), 'D'), 0
 
 
-def read_posix_ts(dt_tm_str: str) -> Tuple[np.datetime64, int]:
+def read_posix_ts(dt_tm_str):
     """Read a POSIX-DATE HH:MM:SS field."""
     if dt_tm_str != "":
         (date_str, time_str) = dt_tm_str.split(" ")
@@ -249,7 +247,7 @@ def read_posix_ts(dt_tm_str: str) -> Tuple[np.datetime64, int]:
         return np.datetime64(datetime.date(year=1, month=1, day=1), 'D'), 0
 
 
-def str_or_blank(val) -> str:
+def str_or_blank(val):
     """Return a string or blank for None."""
     if val is not None:
         return str(val)
@@ -258,7 +256,7 @@ def str_or_blank(val) -> str:
 
 
 def us_since_midnight_to_time(
-        us_dt: Union[int, np.datetime64]) -> datetime.time:
+        us_dt):
     """Convert us since midnight to datetime.time with rounding."""
     us = us_dt.astype('int')
     assert us >= 0
@@ -274,7 +272,7 @@ def us_since_midnight_to_time(
                          microsecond=int(microsecond))
 
 
-def time_to_hhmmss(tm: datetime.time) -> str:
+def time_to_hhmmss(tm):
     """Convert a datetime.time to HHMMSS string."""
     if tm is not None:
         return "%.2d%.2d%.2d" % (tm.hour, tm.minute, tm.second)
@@ -282,12 +280,12 @@ def time_to_hhmmss(tm: datetime.time) -> str:
         return ""
 
 
-def datetime64_to_date(dt64: np.datetime64) -> datetime.date:
+def datetime64_to_date(dt64):
     """Convert a np.datetime64('D') to a datetime.date"""
     return dt64.astype(datetime.date)
 
 
-def date_to_yyyymmdd(dt: datetime.date) -> str:
+def date_to_yyyymmdd(dt):
     """Convert a datetime.date to a CCYYMMDD string."""
     if dt is not None:
         return "%.4d%.2d%.2d" % (dt.year, dt.month, dt.day)
@@ -295,8 +293,8 @@ def date_to_yyyymmdd(dt: datetime.date) -> str:
         return ""
 
 
-def date_us_to_datetime(dt64: np.datetime64,
-                        tm_int: Union[int, np.datetime64]) -> datetime.datetime:
+def date_us_to_datetime(dt64,
+                        tm_int):
     """Convert a np.datetime64('D') and us_since midnight to datetime"""
     dt = datetime64_to_date(dt64)
     tm = us_since_midnight_to_time(tm_int)
@@ -305,7 +303,7 @@ def date_us_to_datetime(dt64: np.datetime64,
                              microsecond=tm.microsecond)
 
 
-def datetime_to_yyyymmdd_hhmmss(dt_tm: datetime.datetime) -> str:
+def datetime_to_yyyymmdd_hhmmss(dt_tm):
     """Convert datetime to CCYYMMDD HHMMSS string"""
     if dt_tm is not None:
         return "%.4d%.2d%.2d %.2d%.2d%.2d" % (dt_tm.year,

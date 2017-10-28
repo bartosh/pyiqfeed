@@ -28,7 +28,6 @@ output.
 
 """
 
-from typing import Sequence
 import numpy as np
 from .conn import FeedConn, AdminConn, QuoteConn
 
@@ -49,18 +48,18 @@ class SilentIQFeedListener:
 
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name):
         self._name = name
 
-    def feed_is_stale(self) -> None:
+    def feed_is_stale(self):
         """Connection between IQFeed.exe and DTN's servers dropped."""
         pass
 
-    def feed_is_fresh(self) -> None:
+    def feed_is_fresh(self):
         """Connection between IQFeed.exe and DTN's servers reconnected."""
         pass
 
-    def feed_has_error(self) -> None:
+    def feed_has_error(self):
         """
         Connection between IQFeed.exe and DTN's servers is bad.
 
@@ -69,7 +68,7 @@ class SilentIQFeedListener:
         """
         pass
 
-    def process_conn_stats(self, stats: FeedConn.ConnStatsMsg) -> None:
+    def process_conn_stats(self, stats):
         """
         Connection statistics for this connection.
 
@@ -78,7 +77,7 @@ class SilentIQFeedListener:
         """
         pass
 
-    def process_timestamp(self, time_val: FeedConn.TimeStampMsg) -> None:
+    def process_timestamp(self, time_val):
         """Timestamp when you have requested timestamps."""
         pass
 
@@ -97,10 +96,10 @@ class SilentQuoteListener(SilentIQFeedListener):
 
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name):
         super().__init__(name)
 
-    def process_invalid_symbol(self, bad_symbol: str) -> None:
+    def process_invalid_symbol(self, bad_symbol):
         """
         You made a subscription request with an invalid symbol
 
@@ -109,7 +108,7 @@ class SilentQuoteListener(SilentIQFeedListener):
         """
         pass
 
-    def process_news(self, news_item: QuoteConn.NewsMsg) -> None:
+    def process_news(self, news_item):
         """
         A news story hit the news wires.
 
@@ -127,7 +126,7 @@ class SilentQuoteListener(SilentIQFeedListener):
         """
         pass
 
-    def process_regional_quote(self, quote: np.array) -> None:
+    def process_regional_quote(self, quote):
         """
         The top of book at a market-center was updated
 
@@ -138,7 +137,7 @@ class SilentQuoteListener(SilentIQFeedListener):
         """
         pass
 
-    def process_summary(self, summary: np.array) -> None:
+    def process_summary(self, summary):
         """
         Initial data after subscription with latest quote, last trade etc.
 
@@ -154,7 +153,7 @@ class SilentQuoteListener(SilentIQFeedListener):
         """
         pass
 
-    def process_update(self, update: np.array) -> None:
+    def process_update(self, update):
         """
         Update with latest quote, last trade etc.
 
@@ -173,7 +172,7 @@ class SilentQuoteListener(SilentIQFeedListener):
         """
         pass
 
-    def process_fundamentals(self, fund: np.array) -> None:
+    def process_fundamentals(self, fund):
         """
         Message with information about symbol which does not change.
 
@@ -190,16 +189,16 @@ class SilentQuoteListener(SilentIQFeedListener):
         """
         pass
 
-    def process_auth_key(self, key: str) -> None:
+    def process_auth_key(self, key):
         """Authorization key: Ignore unless you have a good reason not to."""
         pass
 
-    def process_keyok(self) -> None:
+    def process_keyok(self):
         """Relic from old authorization mechanism. Ignore."""
         pass
 
     def process_customer_info(self,
-                              cust_info: QuoteConn.CustomerInfoMsg) -> None:
+                              cust_info):
         """
         Information about your entitlements etc.
 
@@ -211,15 +210,15 @@ class SilentQuoteListener(SilentIQFeedListener):
         """
         pass
 
-    def process_watched_symbols(self, symbols: Sequence[str]) -> None:
+    def process_watched_symbols(self, symbols):
         """List of all watched symbols when requested."""
         pass
 
-    def process_log_levels(self, levels: Sequence[str]) -> None:
+    def process_log_levels(self, levels):
         """List of current log levels when requested."""
         pass
 
-    def process_symbol_limit_reached(self, sym: str) -> None:
+    def process_symbol_limit_reached(self, sym):
         """
         Subscribed to more than the number of symbols you are authorized for.
 
@@ -228,7 +227,7 @@ class SilentQuoteListener(SilentIQFeedListener):
         """
         pass
 
-    def process_ip_addresses_used(self, ip: str) -> None:
+    def process_ip_addresses_used(self, ip):
         """IP Address used to connect to DTN's servers."""
         pass
 
@@ -245,10 +244,10 @@ class SilentAdminListener(SilentIQFeedListener):
 
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, name):
+        SilentIQFeedListener.__init__(self, name)
 
-    def process_register_client_app_completed(self) -> None:
+    def process_register_client_app_completed(self):
         """
         The client app is now registered.
 
@@ -260,7 +259,7 @@ class SilentAdminListener(SilentIQFeedListener):
         """
         pass
 
-    def process_remove_client_app_completed(self) -> None:
+    def process_remove_client_app_completed(self):
         """
         The client app is now de-registered.
 
@@ -273,28 +272,28 @@ class SilentAdminListener(SilentIQFeedListener):
         """
         pass
 
-    def process_current_login(self, login: str) -> None:
+    def process_current_login(self, login):
         """Current user login processed."""
         pass
 
-    def process_current_password(self, password: str) -> None:
+    def process_current_password(self, password):
         """Current password processed."""
         pass
 
-    def process_login_info_saved(self) -> None:
+    def process_login_info_saved(self):
         """User's login and password saved."""
         pass
 
-    def process_autoconnect_on(self) -> None:
+    def process_autoconnect_on(self):
         """Request to autoconnect processed."""
         pass
 
-    def process_autoconnect_off(self) -> None:
+    def process_autoconnect_off(self):
         """Request not to autoconnect processed."""
         pass
 
     def process_client_stats(self,
-                             client_stats: AdminConn.ClientStatsMsg) -> None:
+                             client_stats):
         """
         Message with information about a specific connection.
 
@@ -323,10 +322,10 @@ class SilentBarListener(SilentIQFeedListener):
 
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, name):
+        SilentIQFeedListener.__init__(self, name)
 
-    def process_latest_bar_update(self, bar_data: np.array) -> None:
+    def process_latest_bar_update(self, bar_data):
         """
         Update to the currently-live bar.
 
@@ -349,7 +348,7 @@ class SilentBarListener(SilentIQFeedListener):
         """
         pass
 
-    def process_live_bar(self, bar_data: np.array) -> None:
+    def process_live_bar(self, bar_data):
         """
         Bar update for a complete bar.
 
@@ -365,7 +364,7 @@ class SilentBarListener(SilentIQFeedListener):
         """
         pass
 
-    def process_history_bar(self, bar_data: np.array) -> None:
+    def process_history_bar(self, bar_data):
         """
         Bar update for a historical bar.
 
@@ -382,7 +381,7 @@ class SilentBarListener(SilentIQFeedListener):
         """
         pass
 
-    def process_invalid_symbol(self, bad_symbol: str) -> None:
+    def process_invalid_symbol(self, bad_symbol):
         """
         Bar request with invalid symbol or no authorization for symbol.
 
@@ -391,7 +390,7 @@ class SilentBarListener(SilentIQFeedListener):
         """
         pass
 
-    def process_symbol_limit_reached(self, symbol: str) -> None:
+    def process_symbol_limit_reached(self, symbol):
         """
         Bar request would put us over the limit for the number or symbols
 
@@ -400,7 +399,7 @@ class SilentBarListener(SilentIQFeedListener):
         """
         pass
 
-    def process_replaced_previous_watch(self, symbol: str) -> None:
+    def process_replaced_previous_watch(self, symbol):
         """
         Previous request for bars overridden by new request.
 
@@ -413,7 +412,7 @@ class SilentBarListener(SilentIQFeedListener):
         """
         pass
 
-    def process_watch(self, symbol: str, interval: int, request_id: str):
+    def process_watch(self, symbol, interval, request_id):
         """
         One of a list of the symbols you are subscribed.
 
@@ -437,23 +436,23 @@ class VerboseIQFeedListener:
 
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name):
         self._name = name
 
-    def feed_is_stale(self) -> None:
+    def feed_is_stale(self):
         print("%s: Feed Disconnected" % self._name)
 
-    def feed_is_fresh(self) -> None:
+    def feed_is_fresh(self):
         print("%s: Feed Connected" % self._name)
 
-    def feed_has_error(self) -> None:
+    def feed_has_error(self):
         print("%s: Feed Reconnect Failed" % self._name)
 
-    def process_conn_stats(self, stats: FeedConn.ConnStatsMsg) -> None:
+    def process_conn_stats(self, stats):
         print("%s: Connection Stats:" % self._name)
         print(stats)
 
-    def process_timestamp(self, time_val: FeedConn.TimeStampMsg):
+    def process_timestamp(self, time_val):
         print("%s: Timestamp:" % self._name)
         print(time_val)
 
@@ -471,56 +470,56 @@ class VerboseQuoteListener(VerboseIQFeedListener):
 
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, name):
+        VerboseIQFeedListener.__init__(self, name)
 
-    def process_invalid_symbol(self, bad_symbol: str) -> None:
+    def process_invalid_symbol(self, bad_symbol):
         print("%s: Invalid Symbol: %s" % (self._name, bad_symbol))
 
-    def process_news(self, news_item: QuoteConn.NewsMsg) -> None:
+    def process_news(self, news_item):
         print("%s: News Item Received" % self._name)
         print(news_item)
 
-    def process_regional_quote(self, quote: np.array) -> None:
+    def process_regional_quote(self, quote):
         print("%s: Regional Quote:" % self._name)
         print(quote)
 
-    def process_summary(self, summary: np.array) -> None:
+    def process_summary(self, summary):
         print("%s: Data Summary" % self._name)
         print(summary)
 
-    def process_update(self, update: np.array) -> None:
+    def process_update(self, update):
         print("%s: Data Update" % self._name)
         print(update)
 
-    def process_fundamentals(self, fund: np.array) -> None:
+    def process_fundamentals(self, fund):
         print("%s: Fundamentals Received:" % self._name)
         print(fund)
 
-    def process_auth_key(self, key: str) -> None:
+    def process_auth_key(self, key):
         print("%s: Authorization Key Received: %s" % (self._name, key))
 
-    def process_keyok(self) -> None:
+    def process_keyok(self):
         print("%s: Authorization Key OK" % self._name)
 
     def process_customer_info(self,
-                              cust_info: QuoteConn.CustomerInfoMsg) -> None:
+                              cust_info):
         print("%s: Customer Information:" % self._name)
         print(cust_info)
 
-    def process_watched_symbols(self, symbols: Sequence[str]):
+    def process_watched_symbols(self, symbols):
         print("%s: List of subscribed symbols:" % self._name)
         print(symbols)
 
-    def process_log_levels(self, levels: Sequence[str]) -> None:
+    def process_log_levels(self, levels):
         print("%s: Active Log levels:" % self._name)
         print(levels)
 
-    def process_symbol_limit_reached(self, sym: str) -> None:
+    def process_symbol_limit_reached(self, sym):
         print("%s: Symbol Limit Reached with subscription to %s" %
               (self._name, sym))
 
-    def process_ip_addresses_used(self, ip: str) -> None:
+    def process_ip_addresses_used(self, ip):
         print("%s: IP Addresses Used: %s" % (self._name, ip))
 
 
@@ -533,32 +532,32 @@ class VerboseAdminListener(VerboseIQFeedListener):
 
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, name):
+        VerboseIQFeedListener.__init__(self, name)
 
-    def process_register_client_app_completed(self) -> None:
+    def process_register_client_app_completed(self):
         print("%s: Register Client App Completed" % self._name)
 
-    def process_remove_client_app_completed(self) -> None:
+    def process_remove_client_app_completed(self):
         print("%s: Remove Client App Completed" % self._name)
 
-    def process_current_login(self, login: str) -> None:
+    def process_current_login(self, login):
         print("%s: Current Login: %s" % (self._name, login))
 
-    def process_current_password(self, password: str) -> None:
+    def process_current_password(self, password):
         print("%s: Current Password: %s" % (self._name, password))
 
-    def process_login_info_saved(self) -> None:
+    def process_login_info_saved(self):
         print("%s: Login Info Saved" % self._name)
 
-    def process_autoconnect_on(self) -> None:
+    def process_autoconnect_on(self):
         print("%s: Autoconnect On" % self._name)
 
-    def process_autoconnect_off(self) -> None:
+    def process_autoconnect_off(self):
         print("%s: Autoconnect Off" % self._name)
 
     def process_client_stats(self,
-                             client_stats: AdminConn.ClientStatsMsg) -> None:
+                             client_stats):
         print("%s: Client Stats:" % self._name)
         print(client_stats)
 
@@ -572,30 +571,30 @@ class VerboseBarListener(VerboseIQFeedListener):
 
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, name):
+        VerboseIQFeedListener.__init__(self, name)
 
-    def process_latest_bar_update(self, bar_data: np.array) -> None:
+    def process_latest_bar_update(self, bar_data):
         print("%s: Process latest bar update:" % self._name)
         print(bar_data)
 
-    def process_live_bar(self, bar_data: np.array) -> None:
+    def process_live_bar(self, bar_data):
         print("%s: Process live bar:" % self._name)
         print(bar_data)
 
-    def process_history_bar(self, bar_data: np.array) -> None:
+    def process_history_bar(self, bar_data):
         print("%s: Process history bar:" % self._name)
         print(bar_data)
 
-    def process_invalid_symbol(self, bad_symbol: str) -> None:
+    def process_invalid_symbol(self, bad_symbol):
         print("%s: Invalid Symbol: %s" % (self._name, bad_symbol))
 
-    def process_symbol_limit_reached(self, symbol: str) -> None:
+    def process_symbol_limit_reached(self, symbol):
         print("%s: Symbol Limit reached: %s" % (self._name, symbol))
 
-    def process_replaced_previous_watch(self, symbol: str) -> None:
+    def process_replaced_previous_watch(self, symbol):
         print("%s: Replaced previous watch: %s" % (self._name, symbol))
 
-    def process_watch(self, symbol: str, interval: int, request_id: str):
+    def process_watch(self, symbol, interval, request_id):
         print("%s: Process watch: %s, %d, %s" %
               (self._name, symbol, interval, request_id))

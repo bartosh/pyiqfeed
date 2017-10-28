@@ -53,7 +53,6 @@ import threading
 import time
 
 from collections import deque, namedtuple
-from typing import Sequence, List
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as etree
 
@@ -91,7 +90,7 @@ class FeedConn:
 
     TimeStampMsg = namedtuple("TimeStampMsg", ("date", "time"))
 
-    def __init__(self, name: str, host: str, port: int):
+    def __init__(self, name, host, port):
         self._host = host
         self._port = port
         self._name = name
@@ -109,10 +108,10 @@ class FeedConn:
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._read_thread = threading.Thread(group=None, target=self,
                                              name="%s-reader" % self._name,
-                                             args=(), kwargs={}, daemon=None)
+                                             args=(), kwargs={}) #, daemon=None)
         self._set_message_mappings()
 
-    def connect(self) -> None:
+    def connect(self):
         """
         Connect to the appropriate socket and start the reading thread.
 
@@ -127,14 +126,14 @@ class FeedConn:
         self._send_connect_message()
         self.start_runner()
 
-    def start_runner(self) -> None:
+    def start_runner(self):
         """Called to start the reading thread."""
         with self._start_lock:
             self._stop.clear()
             if not self.reader_running():
                 self._read_thread.start()
 
-    def disconnect(self) -> None:
+    def disconnect(self):
         """
         Stop the reading thread and disconnect from the socket to IQFeed.exe
 
@@ -147,14 +146,14 @@ class FeedConn:
             self._sock.close()
             self._sock = None
 
-    def stop_runner(self) -> None:
+    def stop_runner(self):
         """Called to stop the reading and message processing thread."""
         with self._start_lock:
             self._stop.set()
             if self.reader_running():
                 self._read_thread.join(30)
 
-    def reader_running(self) -> bool:
+    def reader_running(self):
         """
         True if the reader thread is running.
 
@@ -165,7 +164,7 @@ class FeedConn:
         """
         return self._read_thread.is_alive()
 
-    def connected(self) -> bool:
+    def connected(self):
         """
         Returns true if IQClient.exe is connected to DTN's servers.
 
@@ -178,16 +177,16 @@ class FeedConn:
         """
         return self._connected
 
-    def name(self) -> str:
+    def name(self):
         """Return whatever you named this conn class in the constructor"""
         return self._name
 
-    def _send_cmd(self, cmd: str) -> None:
+    def _send_cmd(self, cmd):
         with self._send_lock:
             # noinspection PyArgumentEqualDefault
             self._sock.sendall(cmd.encode(encoding='latin-1', errors='strict'))
 
-    def reconnect_failed(self) -> bool:
+    def reconnect_failed(self):
         """
         Returns true if IQClient.exe failed to reconnect to DTN's servers.
 
@@ -205,7 +204,7 @@ class FeedConn:
             if self._read_messages():
                 self._process_messages()
 
-    def _read_messages(self) -> bool:
+    def _read_messages(self):
         """Read raw text sent by IQFeed on socket"""
         ready_list = select.select([self._sock], [], [self._sock], 5)
         if ready_list[2]:
@@ -219,7 +218,7 @@ class FeedConn:
                 return True
         return False
 
-    def _next_message(self) -> str:
+    def _next_message(self):
         """Next complete message from buffer of delimited messages"""
         with self._buf_lock:
             next_delim = self._recv_buf.find('\n')
@@ -230,7 +229,7 @@ class FeedConn:
             else:
                 return ""
 
-    def _set_message_mappings(self) -> None:
+    def _set_message_mappings(self):
         """Creates map of message names to processing functions."""
         self._pf_dict['E'] = self._process_error
         self._pf_dict['T'] = self._process_timestamp
@@ -244,7 +243,7 @@ class FeedConn:
         self._sm_dict["CURRENT PROTOCOL"] = self._process_current_protocol
         self._sm_dict["STATS"] = self._process_conn_stats
 
-    def _process_messages(self) -> None:
+    def _process_messages(self):
         """Process the next complete message waiting to be processed"""
         message = self._next_message()
         while "" != message:
@@ -261,7 +260,7 @@ class FeedConn:
         else:
             return self._process_unregistered_message
 
-    def _process_unregistered_message(self, fields: Sequence[str]) -> None:
+    def _process_unregistered_message(self, fields):
         """Called if we get a message we don't expect.
 
         Appropriate action here is probably to crash.
@@ -271,7 +270,7 @@ class FeedConn:
             self.name(), ",".join(fields)))
         raise UnexpectedMessage(err_msg)
 
-    def _process_system_message(self, fields: Sequence[str]) -> None:
+    def _process_system_message(self, fields):
         """
         Called when the next message is a system message.
 
@@ -295,7 +294,7 @@ class FeedConn:
             return self._process_unregistered_system_message
 
     def _process_unregistered_system_message(self,
-                                             fields: Sequence[str]) -> None:
+                                             fields):
         """
         Called if we get a system message we don't know how to handle.
 
@@ -306,7 +305,7 @@ class FeedConn:
             self.name(), ",".join(fields)))
         raise UnexpectedMessage(err_msg)
 
-    def _process_current_protocol(self, fields: Sequence[str]) -> None:
+    def _process_current_protocol(self, fields):
         """
         Process the Current Protocol Message
 
@@ -326,7 +325,7 @@ class FeedConn:
                 FeedConn.protocol, protocol, self.name()))
             raise UnexpectedProtocol(err_msg)
 
-    def _process_server_disconnected(self, fields: Sequence[str]) -> None:
+    def _process_server_disconnected(self, fields):
         """Called when IQFeed.exe disconnects from DTN's servers."""
         assert len(fields) > 1
         assert fields[0] == "S"
@@ -335,7 +334,7 @@ class FeedConn:
         for listener in self._listeners:
             listener.feed_is_stale()
 
-    def _process_server_connected(self, fields: Sequence[str]) -> None:
+    def _process_server_connected(self, fields):
         """Called when IQFeed.exe connects or re-connects to DTN's servers."""
         assert len(fields) > 1
         assert fields[0] == "S"
@@ -344,7 +343,7 @@ class FeedConn:
         for listener in self._listeners:
             listener.feed_is_fresh()
 
-    def _process_reconnect_failed(self, fields: Sequence[str]) -> None:
+    def _process_reconnect_failed(self, fields):
         """Called if IQFeed.exe cannot reconnect to DTN's servers."""
         assert len(fields) > 1
         assert fields[0] == "S"
@@ -355,7 +354,7 @@ class FeedConn:
             listener.feed_is_stale()
             listener.feed_has_error()
 
-    def _process_conn_stats(self, fields: Sequence[str]) -> None:
+    def _process_conn_stats(self, fields):
         """Parse and send ConnStatsMsg to listener."""
         assert len(fields) > 20
         assert fields[0] == "S"
@@ -385,7 +384,7 @@ class FeedConn:
         for listener in self._listeners:
             listener.process_conn_stats(conn_stats)
 
-    def _process_timestamp(self, fields: Sequence[str]) -> None:
+    def _process_timestamp(self, fields):
         """Parse timestamp and send to listener."""
         # T,[YYYYMMDD HH:MM:SS]
         assert fields[0] == "T"
@@ -396,14 +395,14 @@ class FeedConn:
         for listener in self._listeners:
             listener.process_timestamp(timestamp)
 
-    def _process_error(self, fields: Sequence[str]) -> None:
+    def _process_error(self, fields):
         """Called when IQFeed.exe sends us an error message."""
         assert fields[0] == "E"
         assert len(fields) > 1
         for listener in self._listeners:
             listener.process_error(fields)
 
-    def add_listener(self, listener) -> None:
+    def add_listener(self, listener):
         """
         Call this to receive updates from this Conn class.
 
@@ -419,7 +418,7 @@ class FeedConn:
         if listener not in self._listeners:
             self._listeners.append(listener)
 
-    def remove_listener(self, listener) -> None:
+    def remove_listener(self, listener):
         """
         Call this to unsubscribe the listener object.
 
@@ -437,17 +436,17 @@ class FeedConn:
         if listener in self._listeners:
             self._listeners.remove(listener)
 
-    def _set_protocol(self, protocol) -> None:
+    def _set_protocol(self, protocol):
         self._send_cmd("S,SET PROTOCOL,%s\r\n" % protocol)
 
-    def _send_connect_message(self) -> None:
+    def _send_connect_message(self):
         msg = "S,CONNECT\r\n"
         self._send_cmd(msg)
 
-    def _send_disconnect_message(self) -> None:
+    def _send_disconnect_message(self):
         self._send_cmd("S,DISCONNECT\r\n")
 
-    def _set_client_name(self, name) -> None:
+    def _set_client_name(self, name):
         self._name = name
         msg = "S,SET CLIENT NAME,%s\r\n" % name
         self._send_cmd(msg)
@@ -709,9 +708,9 @@ class QuoteConn(FeedConn):
         "svc_type", "ip_address", "port", "token", "version", "rt_exchanges",
         "max_symbols", "flags"))
 
-    def __init__(self, name: str = "QuoteConn", host: str = FeedConn.host,
-                 port: int = port):
-        super().__init__(name, host, port)
+    def __init__(self, name = "QuoteConn", host = FeedConn.host,
+                 port = port):
+        FeedConn.__init__(self, name, host, port)
         self._current_update_fields = []
         self._update_names = []
         self._update_dtype = []
@@ -733,19 +732,19 @@ class QuoteConn(FeedConn):
                 1, dtype=QuoteConn.fundamental_type)
         self._empty_regional_msg = np.zeros(1, dtype=QuoteConn.regional_type)
 
-    def connect(self) -> None:
+    def connect(self):
         """
         Call super.connect() and call make initialization requests.
 
         """
-        super().connect()
+        FeedConn.connect(self)
         self._request_fundamental_fieldnames()
         self._request_all_update_fieldnames()
         self._request_current_update_fieldnames()
 
-    def _set_message_mappings(self) -> None:
+    def _set_message_mappings(self):
         """Creates map of message processing functions."""
-        super()._set_message_mappings()
+        FeedConn._set_message_mappings(self)
         self._pf_dict['n'] = self._process_invalid_symbol
         self._pf_dict['N'] = self._process_news
         self._pf_dict['R'] = self._process_regional_quote
@@ -768,7 +767,7 @@ class QuoteConn(FeedConn):
             "CURRENT UPDATE FIELDNAMES"] = \
             self._process_current_update_fieldnames
 
-    def _process_invalid_symbol(self, fields: Sequence[str]) -> None:
+    def _process_invalid_symbol(self, fields):
         """Called when IQFeed tells us we used and invalid symbol."""
         assert len(fields) > 1
         assert fields[0] == 'n'
@@ -776,7 +775,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_invalid_symbol(bad_sym)
 
-    def _process_news(self, fields: Sequence[str]):
+    def _process_news(self, fields):
         """Process a real-time news story."""
         assert len(fields) > 5
         assert fields[0] == "N"
@@ -795,7 +794,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_news(news)
 
-    def _process_regional_quote(self, fields: Sequence[str]):
+    def _process_regional_quote(self, fields):
         """Process a regional quote message."""
         assert len(fields) > 11
         assert fields[0] == "R"
@@ -813,7 +812,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_regional_rgn_quote(rgn_quote)
 
-    def _process_summary(self, fields: Sequence[str]) -> None:
+    def _process_summary(self, fields):
         """Process a symbol summary message"""
         assert len(fields) > 2
         assert fields[0] == "P"
@@ -821,7 +820,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_summary(update)
 
-    def _process_update(self, fields: Sequence[str]) -> None:
+    def _process_update(self, fields):
         """Process a symbol update message."""
         assert len(fields) > 2
         assert fields[0] == "Q"
@@ -829,7 +828,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_update(update)
 
-    def _create_update(self, fields: Sequence[str]) -> np.array:
+    def _create_update(self, fields):
         """Create an update message."""
         update = self._empty_update_msg
         for field_num, field in enumerate(fields[1:]):
@@ -839,7 +838,7 @@ class QuoteConn(FeedConn):
                 field_num](field)
         return update
 
-    def _process_fundamentals(self, fields: Sequence[str]):
+    def _process_fundamentals(self, fields):
         """Process a fundamental data message."""
         assert len(fields) > 55
         assert fields[0] == 'F'
@@ -900,7 +899,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_fundamentals(msg)
 
-    def _process_auth_key(self, fields: Sequence[str]) -> None:
+    def _process_auth_key(self, fields):
         """Still sent so needs to be handled, but obsolete."""
         assert len(fields) > 2
         assert fields[0] == "S"
@@ -909,7 +908,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_auth_key(auth_key)
 
-    def _process_keyok(self, fields: Sequence[str]) -> None:
+    def _process_keyok(self, fields):
         """Still sent so needs to be handled, but obsolete."""
         assert len(fields) > 1
         assert fields[0] == 'S'
@@ -917,7 +916,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_keyok()
 
-    def _process_customer_info(self, fields: Sequence[str]) -> None:
+    def _process_customer_info(self, fields):
         """Handle a customer information message."""
         assert len(fields) > 11
         assert fields[0] == 'S'
@@ -930,7 +929,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_customer_info(cust_info)
 
-    def _process_watches(self, fields: Sequence[str]) -> None:
+    def _process_watches(self, fields):
         """Handle a watches message."""
         assert len(fields) > 1
         assert fields[0] == 'S'
@@ -938,7 +937,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_watched_symbols(fields[2:])
 
-    def _process_current_log_levels(self, fields: Sequence[str]) -> None:
+    def _process_current_log_levels(self, fields):
         """Called when IQFeed acknowledges log levels have changed"""
         assert len(fields) > 1
         assert fields[0] == 'S'
@@ -946,7 +945,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_log_levels(fields[2:])
 
-    def _process_symbol_limit_reached(self, fields: Sequence[str]) -> None:
+    def _process_symbol_limit_reached(self, fields):
         """Handle IQFeed telling us the symbol limit has been reached."""
         assert len(fields) > 2
         assert fields[0] == 'S'
@@ -955,7 +954,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_symbol_limit_reached(sym)
 
-    def _process_ip_addresses_used(self, fields: Sequence[str]) -> None:
+    def _process_ip_addresses_used(self, fields):
         """IP addresses IQFeed.exe is connecting to for data."""
         assert len(fields) > 2
         assert fields[0] == 'S'
@@ -964,7 +963,7 @@ class QuoteConn(FeedConn):
         for listener in self._listeners:
             listener.process_ip_addresses_used(ip)
 
-    def _process_fundamental_fieldnames(self, fields: Sequence[str]) -> None:
+    def _process_fundamental_fieldnames(self, fields):
         """Process a fundamental data message."""
         assert len(fields) > 2
         assert fields[0] == 'S'
@@ -980,7 +979,7 @@ class QuoteConn(FeedConn):
                            (field, self.name()))
                 raise UnexpectedField(err_msg)
 
-    def _process_update_fieldnames(self, fields: Sequence[str]) -> None:
+    def _process_update_fieldnames(self, fields):
         """
         Process a message giving us a list of all update fieldnames.
 
@@ -1003,8 +1002,7 @@ class QuoteConn(FeedConn):
                     (field, self.name()))
                 raise UnexpectedField(err_msg)
 
-    def _process_current_update_fieldnames(self, fields: Sequence[str]) -> \
-            None:
+    def _process_current_update_fieldnames(self, fields):
         """
         IQFeed has accepted our update fieldnames request.
 
@@ -1076,7 +1074,7 @@ class QuoteConn(FeedConn):
 
         self._empty_update_msg = np.zeros(1, dtype=self._update_dtype)
 
-    def _request_fundamental_fieldnames(self) -> None:
+    def _request_fundamental_fieldnames(self):
         """
         Request a list of all fields in the fundamentals message.
 
@@ -1086,7 +1084,7 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("S,REQUEST FUNDAMENTAL FIELDNAMES\r\n")
 
-    def _request_all_update_fieldnames(self) -> None:
+    def _request_all_update_fieldnames(self):
         """
         Request a list of all available fields for updates messages.
 
@@ -1096,7 +1094,7 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("S,REQUEST ALL UPDATE FIELDNAMES\r\n")
 
-    def _request_current_update_fieldnames(self) -> None:
+    def _request_current_update_fieldnames(self):
         """
         Request a list of all current fields for updates messages.
 
@@ -1106,7 +1104,7 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("S,REQUEST CURRENT UPDATE FIELDNAMES\r\n")
 
-    def select_update_fieldnames(self, field_names: List[str]) -> None:
+    def select_update_fieldnames(self, field_names):
         """
         Request the fields you want sent in an update message.
 
@@ -1132,7 +1130,7 @@ class QuoteConn(FeedConn):
                                                           field_names[0]
         self._send_cmd("S,SELECT UPDATE FIELDS,%s\r\n" % ",".join(field_names))
 
-    def req_timestamp(self) -> None:
+    def req_timestamp(self):
         """
         Ask IQFeed.exe to send you a single timestamp message
 
@@ -1148,7 +1146,7 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("T\r\n")
 
-    def timestamp_on(self) -> None:
+    def timestamp_on(self):
         """
         Turn on automatic (1 msg/sec) timestamp messages.
 
@@ -1158,11 +1156,11 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("S,TIMESTAMPSON\r\n")
 
-    def timestamp_off(self) -> None:
+    def timestamp_off(self):
         """Turn on automatic (1 msg/sec) timestamp messages."""
         self._send_cmd("S,TIMESTAMPSOFF\r\n")
 
-    def trades_watch(self, symbol: str) -> None:
+    def trades_watch(self, symbol):
         """
         Watch a symbol requesting updates only when a trade happens.
 
@@ -1181,7 +1179,7 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("t%s\r\n" % symbol)
 
-    def watch(self, symbol: str) -> None:
+    def watch(self, symbol):
         """
         Watch a symbol requesting updates for both trades and quotes.
 
@@ -1201,7 +1199,7 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("w%s\r\n" % symbol)
 
-    def unwatch(self, symbol: str) -> None:
+    def unwatch(self, symbol):
         """
         Stop watching a symbol.
 
@@ -1214,7 +1212,7 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("r%s\r\n" % symbol)
 
-    def regional_watch(self, symbol: str) -> None:
+    def regional_watch(self, symbol):
         """
         Request updates when the regional quote for a symbol changes.
 
@@ -1232,7 +1230,7 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("S,REGON,%s\r\n" % symbol)
 
-    def regional_unwatch(self, symbol: str) -> None:
+    def regional_unwatch(self, symbol):
         """
         Stop sending regional updates.
 
@@ -1241,7 +1239,7 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("S,REGOFF,%s\r\n" % symbol)
 
-    def refresh(self, symbol: str) -> None:
+    def refresh(self, symbol):
         """
         Request a refresh for the symbol.
 
@@ -1265,7 +1263,7 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("f%s\r\n" % symbol)
 
-    def request_watches(self) -> None:
+    def request_watches(self):
         """
         Request a current watches message.
 
@@ -1277,11 +1275,11 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("S,REQUEST WATCHES\r\n")
 
-    def unwatch_all(self) -> None:
+    def unwatch_all(self):
         """Unwatch all symbols."""
         self._send_cmd("S,UNWATCH ALL")
 
-    def news_on(self) -> None:
+    def news_on(self):
         """
         Turn on real-time news messages.
 
@@ -1291,11 +1289,11 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("S,NEWSON\r\n")
 
-    def news_off(self) -> None:
+    def news_off(self):
         """Turn off real-time news messages"""
         self._send_cmd("S,NEWSOFF\r\n")
 
-    def request_stats(self) -> None:
+    def request_stats(self):
         """
         Request a connection statistics message.
 
@@ -1305,7 +1303,7 @@ class QuoteConn(FeedConn):
         """
         self._send_cmd("S,REQUEST STATS\r\n")
 
-    def set_log_levels(self, log_levels: Sequence[str]) -> None:
+    def set_log_levels(self, log_levels):
         """
         Set the logging level.
 
@@ -1346,14 +1344,14 @@ class AdminConn(FeedConn):
         "kb_sent", "kb_recvd", "kb_queued", "num_quote_subs", "num_reg_subs",
         "num_depth_subs"))
 
-    def __init__(self, name: str = "AdminConn", host: str = host,
-                 port: int = port):
-        super().__init__(name, host, port)
+    def __init__(self, name = "AdminConn", host = host,
+                 port = port):
+        FeedConn.__init__(self, name, host, port)
         self._set_message_mappings()
 
-    def _set_message_mappings(self) -> None:
+    def _set_message_mappings(self):
         """Set message mappings."""
-        super()._set_message_mappings()
+        FeedConn._set_message_mappings(self)
         self._sm_dict[
             "REGISTER CLIENT APP COMPLETED"] = \
             self._process_register_client_app_completed
@@ -1369,8 +1367,7 @@ class AdminConn(FeedConn):
         self._sm_dict["AUTOCONNECT OFF"] = self._process_autoconnect_off
         self._sm_dict["CLIENTSTATS"] = self._process_client_stats
 
-    def _process_register_client_app_completed(self,
-                                               fields: Sequence[str]) -> None:
+    def _process_register_client_app_completed(self, fields):
         """ Acknowledgement that the client app is registered. """
         assert len(fields) > 1
         assert fields[0] == 'S'
@@ -1379,7 +1376,7 @@ class AdminConn(FeedConn):
             listener.process_register_client_app_completed()
 
     def _process_remove_client_app_completed(self,
-                                             fields: Sequence[str]) -> None:
+                                             fields):
         """
         Acknowledgement that the client app has de-registered.
 
@@ -1394,7 +1391,7 @@ class AdminConn(FeedConn):
         for listener in self._listeners:
             listener.process_remove_client_app_completed()
 
-    def _process_current_login(self, fields: Sequence[str]) -> None:
+    def _process_current_login(self, fields):
         """IQFeed sending the current login."""
         assert len(fields) > 2
         assert fields[0] == 'S'
@@ -1403,7 +1400,7 @@ class AdminConn(FeedConn):
         for listener in self._listeners:
             listener.process_current_login(login_id)
 
-    def _process_current_password(self, fields: Sequence[str]) -> None:
+    def _process_current_password(self, fields):
         """IQFeed sending the current client password."""
         assert len(fields) > 2
         assert fields[0] == 'S'
@@ -1412,7 +1409,7 @@ class AdminConn(FeedConn):
         for listener in self._listeners:
             listener.process_current_password(password)
 
-    def _process_login_info_saved(self, fields: Sequence[str]) -> None:
+    def _process_login_info_saved(self, fields):
         """IQFeed sending the login info has been save by IQFeed."""
         assert len(fields) > 1
         assert fields[0] == 'S'
@@ -1420,7 +1417,7 @@ class AdminConn(FeedConn):
         for listener in self._listeners:
             listener.process_login_info_saved()
 
-    def _process_login_info_not_saved(self, fields: Sequence[str]) -> None:
+    def _process_login_info_not_saved(self, fields):
         """IQFeed sending the login info is no longer saved."""
         assert len(fields) > 1
         assert fields[0] == 'S'
@@ -1428,7 +1425,7 @@ class AdminConn(FeedConn):
         for listener in self._listeners:
             listener.process_login_info_not_saved()
 
-    def _process_autoconnect_on(self, fields: Sequence[str]) -> None:
+    def _process_autoconnect_on(self, fields):
         """IQFeed telling you that it will automatically connect on startup."""
         assert len(fields) > 1
         assert fields[0] == 'S'
@@ -1436,7 +1433,7 @@ class AdminConn(FeedConn):
         for listener in self._listeners:
             listener.process_autoconnect_on()
 
-    def _process_autoconnect_off(self, fields: Sequence[str]) -> None:
+    def _process_autoconnect_off(self, fields):
         """IQFeed will not autoconnect to DTN servers on startup."""
         assert len(fields) > 1
         assert fields[0] == 'S'
@@ -1444,7 +1441,7 @@ class AdminConn(FeedConn):
         for listener in self._listeners:
             listener.process_autoconnect_off()
 
-    def _process_client_stats(self, fields: Sequence[str]) -> None:
+    def _process_client_stats(self, fields):
         """Client statistics for a specific connection."""
         assert len(fields) > 10
         assert fields[0] == 'S'
@@ -1493,7 +1490,7 @@ class AdminConn(FeedConn):
         for listener in self._listeners:
             listener.process_client_stats(client_stats)
 
-    def register_client_app(self, product: str) -> None:
+    def register_client_app(self, product):
         """
         Register your application with IQFeed.
 
@@ -1511,7 +1508,7 @@ class AdminConn(FeedConn):
         """
         self._send_cmd("S,REGISTER CLIENT APP,%s\r\n" % product)
 
-    def remove_client_app(self, product: str) -> None:
+    def remove_client_app(self, product):
         """
         Unregister your application  with IQFeed.
 
@@ -1526,7 +1523,7 @@ class AdminConn(FeedConn):
         """
         self._send_cmd("S REMOVE CLIENT APP,%s\r\n" % product)
 
-    def set_login(self, login: str) -> None:
+    def set_login(self, login):
         """
         Set the user login.
 
@@ -1540,7 +1537,7 @@ class AdminConn(FeedConn):
         """
         self._send_cmd("S,SET LOGINID,%s\r\n" % login)
 
-    def set_password(self, password: str) -> None:
+    def set_password(self, password):
         """
         Set the user password.
 
@@ -1554,7 +1551,7 @@ class AdminConn(FeedConn):
         """
         self._send_cmd("S,SET PASSWORD,%s\r\n" % password)
 
-    def set_autoconnect(self, autoconnect: bool = True) -> None:
+    def set_autoconnect(self, autoconnect = True):
         """
         Tells IQFeed to autoconnect to DTN servers on startup or not
 
@@ -1569,7 +1566,7 @@ class AdminConn(FeedConn):
         else:
             self._send_cmd("S,SET AUTOCONNECT,Off\r\n")
 
-    def save_login_info(self, save_info: bool = True) -> None:
+    def save_login_info(self, save_info = True):
         """
         Tells IQFeed to save the login info
 
@@ -1584,7 +1581,7 @@ class AdminConn(FeedConn):
         else:
             self._send_cmd("S,SET SAVE LOGIN INFO,Off\r\n")
 
-    def client_stats_on(self) -> None:
+    def client_stats_on(self):
         """
         Request client statistics from IQFeed.
 
@@ -1598,13 +1595,13 @@ class AdminConn(FeedConn):
         """
         self._send_cmd("S,CLIENTSTATS ON\r\n")
 
-    def client_stats_off(self) -> None:
+    def client_stats_off(self):
         """Turn off client statistics."""
         self._send_cmd("S,CLIENTSTATS OFF\r\n")
 
-    def set_admin_variables(self, product: str, login: str, password: str,
-                            autoconnect: bool = True,
-                            save_info: bool = True) -> None:
+    def set_admin_variables(self, product, login, password,
+                            autoconnect = True,
+                            save_info = True):
         """Set the administrative variables."""
         self.register_client_app(product)
         self.set_login(login)
@@ -1677,9 +1674,9 @@ class HistoryConn(FeedConn):
     _databuf = namedtuple("_databuf",
                           ['failed', 'err_msg', 'num_pts', 'raw_data'])
 
-    def __init__(self, name: str = "HistoryConn", host: str = FeedConn.host,
-                 port: int = port):
-        super().__init__(name, host, port)
+    def __init__(self, name = "HistoryConn", host = FeedConn.host,
+                 port = port):
+        FeedConn.__init__(self, name, host, port)
         self._set_message_mappings()
         self._req_num = 0
         self._req_buf = {}
@@ -1690,16 +1687,16 @@ class HistoryConn(FeedConn):
         self._req_lock = threading.RLock()
         self._req_num_lock = threading.RLock()
 
-    def _set_message_mappings(self) -> None:
+    def _set_message_mappings(self):
         """Set the message mappings"""
-        super()._set_message_mappings()
+        FeedConn._set_message_mappings(self)
         self._pf_dict['H'] = self._process_datum
 
     def _send_connect_message(self):
         """The lookup socket does not accept connect messages."""
         pass
 
-    def _process_datum(self, fields: Sequence[str]) -> None:
+    def _process_datum(self, fields):
         req_id = fields[0]
         if 'E' == fields[1]:
             # Error
@@ -1715,20 +1712,20 @@ class HistoryConn(FeedConn):
             self._req_buf[req_id].append(fields)
             self._req_numlines[req_id] += 1
 
-    def _get_next_req_id(self) -> str:
+    def _get_next_req_id(self):
         with self._req_num_lock:
             req_id = "H_%.10d" % self._req_num
             self._req_num += 1
             return req_id
 
-    def _cleanup_request_data(self, req_id: str) -> None:
+    def _cleanup_request_data(self, req_id):
         with self._req_lock:
             del self._req_failed[req_id]
             del self._req_err[req_id]
             del self._req_buf[req_id]
             del self._req_numlines[req_id]
 
-    def _setup_request_data(self, req_id: str) -> None:
+    def _setup_request_data(self, req_id):
         """Setup empty buffers and other variables for a request."""
         with self._req_lock:
             self._req_buf[req_id] = deque()
@@ -1737,7 +1734,7 @@ class HistoryConn(FeedConn):
             self._req_err[req_id] = ""
             self._req_event[req_id] = threading.Event()
 
-    def _get_data_buf(self, req_id: str) -> namedtuple:
+    def _get_data_buf(self, req_id):
         """Get the data buffer associated with a specific request."""
         with self._req_lock:
             buf = HistoryConn._databuf(
@@ -1748,7 +1745,7 @@ class HistoryConn(FeedConn):
         self._cleanup_request_data(req_id)
         return buf
 
-    def _read_ticks(self, req_id: str) -> np.array:
+    def _read_ticks(self, req_id):
         """Get buffer for req_id and transform to a numpy array of ticks."""
         res = self._get_data_buf(req_id)
         if res.failed:
@@ -1799,8 +1796,8 @@ class HistoryConn(FeedConn):
                     assert line_num >= res.num_pts
             return data
 
-    def request_ticks(self, ticker: str, max_ticks: int, ascend: bool = False,
-                      timeout: int = None) -> np.array:
+    def request_ticks(self, ticker, max_ticks, ascend = False,
+                      timeout = None):
         """
         Request historical tickdata. Including upto the last second.
 
@@ -1834,11 +1831,11 @@ class HistoryConn(FeedConn):
         else:
             return data
 
-    def request_ticks_for_days(self, ticker: str, num_days: int,
-                               bgn_flt: datetime.time = None,
-                               end_flt: datetime.time = None,
-                               ascend: bool = False, max_ticks: int = None,
-                               timeout: int = None) -> np.array:
+    def request_ticks_for_days(self, ticker, num_days,
+                               bgn_flt = None,
+                               end_flt = None,
+                               ascend = False, max_ticks = None,
+                               timeout = None):
         """
         Request tickdata for a certain number of days in the past.
 
@@ -1881,12 +1878,12 @@ class HistoryConn(FeedConn):
         else:
             return data
 
-    def request_ticks_in_period(self, ticker: str, bgn_prd: datetime.datetime,
-                                end_prd: datetime.datetime,
-                                bgn_flt: datetime.time = None,
-                                end_flt: datetime.time = None,
-                                ascend: bool = False, max_ticks: int = None,
-                                timeout: int = None) -> np.array:
+    def request_ticks_in_period(self, ticker, bgn_prd,
+                                end_prd,
+                                bgn_flt = None,
+                                end_flt = None,
+                                ascend = False, max_ticks = None,
+                                timeout = None):
         """
         Request tickdata in a certain period.
 
@@ -1933,7 +1930,7 @@ class HistoryConn(FeedConn):
         else:
             return data
 
-    def _read_bars(self, req_id: str) -> np.array:
+    def _read_bars(self, req_id):
         """Get buffer for req_id and transform to a numpy array of bars."""
         res = self._get_data_buf(req_id)
         if res.failed:
@@ -1960,9 +1957,9 @@ class HistoryConn(FeedConn):
                     assert line_num >= res.num_pts
             return data
 
-    def request_bars(self, ticker: str, interval_len: int, interval_type: str,
-                     max_bars: int, ascend: bool = False,
-                     timeout: int = None) -> np.array:
+    def request_bars(self, ticker, interval_len, interval_type,
+                     max_bars, ascend = False,
+                     timeout = None):
         """
         Get max_bars number of bars of bar_data from IQFeed.
 
@@ -2008,12 +2005,12 @@ class HistoryConn(FeedConn):
         else:
             return data
 
-    def request_bars_for_days(self, ticker: str, interval_len: int,
-                              interval_type: str, days: int,
-                              bgn_flt: datetime.time = None,
-                              end_flt: datetime.time = None,
-                              ascend: bool = False, max_bars: int = None,
-                              timeout: int = None) -> np.array:
+    def request_bars_for_days(self, ticker, interval_len,
+                              interval_type, days,
+                              bgn_flt = None,
+                              end_flt = None,
+                              ascend = False, max_bars = None,
+                              timeout = None):
         """
         Get bars for the previous N days.
 
@@ -2068,13 +2065,13 @@ class HistoryConn(FeedConn):
         else:
             return data
 
-    def request_bars_in_period(self, ticker: str, interval_len: int,
-                               interval_type: str, bgn_prd: datetime.datetime,
-                               end_prd: datetime.datetime,
-                               bgn_flt: datetime.time = None,
-                               end_flt: datetime.time = None,
-                               ascend: bool = False, max_bars: int = None,
-                               timeout: int = None) -> np.array:
+    def request_bars_in_period(self, ticker, interval_len,
+                               interval_type, bgn_prd,
+                               end_prd,
+                               bgn_flt = None,
+                               end_flt = None,
+                               ascend = False, max_bars = None,
+                               timeout = None):
         """
         Get bars for a specific period.
 
@@ -2132,7 +2129,7 @@ class HistoryConn(FeedConn):
         else:
             return data
 
-    def _read_daily_data(self, req_id: str) -> np.array:
+    def _read_daily_data(self, req_id):
         """Get buffer for req_id and convert to a numpy array of daily data."""
         res = self._get_data_buf(req_id)
         if res.failed:
@@ -2156,8 +2153,8 @@ class HistoryConn(FeedConn):
                     assert line_num >= res.num_pts
             return data
 
-    def request_daily_data(self, ticker: str, num_days: int,
-                           ascend: bool = False, timeout: int = None):
+    def request_daily_data(self, ticker, num_days,
+                           ascend = False, timeout = None):
         """
         Request daily bars for the previous num_days.
 
@@ -2191,11 +2188,10 @@ class HistoryConn(FeedConn):
         else:
             return data
 
-    def request_daily_data_for_dates(self, ticker: str, bgn_dt: datetime.date,
-                                     end_dt: datetime.date,
-                                     ascend: bool = False, max_days: int =
-                                     None,
-                                     timeout: int = None):
+    def request_daily_data_for_dates(self, ticker, bgn_dt,
+                                     end_dt,
+                                     ascend = False, max_days = None,
+                                     timeout= None):
         """
         Request daily bars for a specific period.
 
@@ -2236,8 +2232,8 @@ class HistoryConn(FeedConn):
         else:
             return data
 
-    def request_weekly_data(self, ticker: str, num_weeks: int,
-                            ascend: bool = False, timeout: int = None):
+    def request_weekly_data(self, ticker, num_weeks,
+                            ascend = False, timeout = None):
         """
         Request weekly bars for the last num_weeks.
 
@@ -2271,8 +2267,8 @@ class HistoryConn(FeedConn):
         else:
             return data
 
-    def request_monthly_data(self, ticker: str, num_months: int,
-                             ascend: bool = False, timeout: int = None):
+    def request_monthly_data(self, ticker, num_months,
+                             ascend = False, timeout = None):
         """
         Request monthly bars for the last num_months.
 
@@ -2349,9 +2345,9 @@ class TableConn(FeedConn):
 
     naic_type = np.dtype([('naic', 'u8'), ('name', 'S128')])
 
-    def __init__(self, name: str = "TableConn", host: str = FeedConn.host,
-                 port: int = port):
-        super().__init__(name, host, port)
+    def __init__(self, name = "TableConn", host = FeedConn.host,
+                 port = port):
+        FeedConn.__init__(self, name, host, port)
 
         self.markets = None
         self.security_types = None
@@ -2369,20 +2365,20 @@ class TableConn(FeedConn):
         # The lookup/history socket does not accept connect messages
         pass
 
-    def _processing_function(self, fields: Sequence[str]):
+    def _processing_function(self, fields):
         """Message processing function."""
         if fields[0].isdigit():
             return self._process_table_entry
         elif fields[0] == '!ENDMSG!':
             return self._process_table_end
         else:
-            return super()._processing_function(fields)
+            return FeedConn._processing_function(self, fields)
 
-    def _process_table_entry(self, fields: Sequence[str]) -> None:
+    def _process_table_entry(self, fields):
         assert fields[0].isdigit()
         self._current_deque.append(fields)
 
-    def _process_table_end(self, fields: Sequence[str]) -> None:
+    def _process_table_end(self, fields):
         assert fields[0] == "!ENDMSG!"
         self._current_event.set()
 
@@ -2592,9 +2588,9 @@ class LookupConn(FeedConn):
     _databuf = namedtuple("_databuf",
                           ['failed', 'err_msg', 'num_pts', 'raw_data'])
 
-    def __init__(self, name: str = "SymbolSearchConn",
-                 host: str = FeedConn.host, port: int = port):
-        super().__init__(name, host, port)
+    def __init__(self, name = "SymbolSearchConn",
+                 host = FeedConn.host, port = port):
+        FeedConn.__init__(self, name, host, port)
         self._set_message_mappings()
         self._req_num = 0
         self._req_buf = {}
@@ -2604,15 +2600,15 @@ class LookupConn(FeedConn):
         self._req_err = {}
         self._req_lock = threading.RLock()
 
-    def _set_message_mappings(self) -> None:
-        super()._set_message_mappings()
+    def _set_message_mappings(self):
+        FeedConn._set_message_mappings(self)
         self._pf_dict['L'] = self._process_lookup_datum
 
     def _send_connect_message(self):
         # The history/lookup socket does not accept connect messages
         pass
 
-    def _process_lookup_datum(self, fields: Sequence[str]) -> None:
+    def _process_lookup_datum(self, fields):
         req_id = fields[0]
         if 'E' == fields[1]:
             # Error
@@ -2628,20 +2624,20 @@ class LookupConn(FeedConn):
             self._req_buf[req_id].append(fields)
             self._req_numlines[req_id] += 1
 
-    def _get_next_req_id(self) -> str:
+    def _get_next_req_id(self):
         with self._req_lock:
             req_id = "L_%.10d" % self._req_num
             self._req_num += 1
             return req_id
 
-    def _cleanup_request_data(self, req_id: str) -> None:
+    def _cleanup_request_data(self, req_id):
         with self._req_lock:
             del self._req_failed[req_id]
             del self._req_err[req_id]
             del self._req_buf[req_id]
             del self._req_numlines[req_id]
 
-    def _setup_request_data(self, req_id: str) -> None:
+    def _setup_request_data(self, req_id):
         with self._req_lock:
             self._req_buf[req_id] = deque()
             self._req_numlines[req_id] = 0
@@ -2649,7 +2645,7 @@ class LookupConn(FeedConn):
             self._req_err[req_id] = ""
             self._req_event[req_id] = threading.Event()
 
-    def _get_data_buf(self, req_id: str) -> namedtuple:
+    def _get_data_buf(self, req_id):
         """Get the data buffer for a specific request."""
         with self._req_lock:
             buf = LookupConn._databuf(
@@ -2660,7 +2656,7 @@ class LookupConn(FeedConn):
         self._cleanup_request_data(req_id)
         return buf
 
-    def _read_symbols(self, req_id: str) -> np.array:
+    def _read_symbols(self, req_id):
         """Get a data buffer and turn into np array of dtype asset_type."""
         res = self._get_data_buf(req_id)
         if res.failed:
@@ -2682,11 +2678,10 @@ class LookupConn(FeedConn):
                     assert line_num >= res.num_pts
             return data
 
-    def request_symbols_by_filter(self, search_term: str,
-                                  search_field: str = 'd', filt_val: str =
-                                  None,
-                                  filt_type: str = None,
-                                  timeout=None) -> np.array:
+    def request_symbols_by_filter(self, search_term,
+                                  search_field = 'd', filt_val = None,
+                                  filt_type = None,
+                                  timeout=None):
         """
         Search for symbols and return matches.
 
@@ -2719,7 +2714,7 @@ class LookupConn(FeedConn):
         else:
             return data
 
-    def _read_symbols_with_sect(self, req_id: str) -> np.array:
+    def _read_symbols_with_sect(self, req_id):
         """Read symbols from buffer where sector field is not null."""
         res = self._get_data_buf(req_id)
         if res.failed:
@@ -2741,7 +2736,7 @@ class LookupConn(FeedConn):
                     assert line_num >= res.num_pts
             return data
 
-    def request_symbols_by_sic(self, sic: int, timeout=None) -> np.array:
+    def request_symbols_by_sic(self, sic, timeout=None):
         """
         Return symbols in a specific SIC sector.
 
@@ -2764,7 +2759,7 @@ class LookupConn(FeedConn):
         else:
             return data
 
-    def request_symbols_by_naic(self, naic: int, timeout=None) -> np.array:
+    def request_symbols_by_naic(self, naic, timeout=None):
         """
         Return symbols in a specific NAIC sector.
 
@@ -2787,7 +2782,7 @@ class LookupConn(FeedConn):
         else:
             return data
 
-    def _read_futures_chain(self, req_id: str) -> List[str]:
+    def _read_futures_chain(self, req_id):
         """Read a buffer and return it as a futures chain."""
         res = self._get_data_buf(req_id)
         if res.failed:
@@ -2799,9 +2794,9 @@ class LookupConn(FeedConn):
                 chain = chain[:-1]
             return chain
 
-    def request_futures_chain(self, symbol: str, month_codes: str = None,
-                              years: str = None, near_months: int = None,
-                              timeout: int = None) -> List[str]:
+    def request_futures_chain(self, symbol, month_codes = None,
+                              years = None, near_months = None,
+                              timeout = None):
         """
         Request a futures chain
         :param symbol: Underlying symbol.
@@ -2843,11 +2838,11 @@ class LookupConn(FeedConn):
 
     def request_futures_spread_chain(
             self,
-            symbol: str,
-            month_codes: str = None,
-            years: str = None,
-            near_months: int = None,
-            timeout: int = None) -> List[str]:
+            symbol,
+            month_codes = None,
+            years = None,
+            near_months = None,
+            timeout = None):
         """
         Request a chain of futures spreads
         :param symbol: Underlying symbol.
@@ -2887,7 +2882,7 @@ class LookupConn(FeedConn):
         else:
             return data
 
-    def _read_option_chain(self, req_id: str):
+    def _read_option_chain(self, req_id):
         res = self._get_data_buf(req_id)
         if res.failed:
             return ["!ERROR!", res.err_msg]
@@ -2905,11 +2900,10 @@ class LookupConn(FeedConn):
                     put_symbols = put_symbols[:-1]
             return {"c": call_symbols, "p": put_symbols}
 
-    def request_futures_option_chain(self, symbol: str, opt_type: str = 'pc',
-                                     month_codes: str = None, years: str =
-                                     None,
-                                     near_months: int = None,
-                                     timeout: int = None) -> dict:
+    def request_futures_option_chain(self, symbol, opt_type = 'pc',
+                                     month_codes = None, years = None,
+                                     near_months = None,
+                                     timeout = None):
         """
         Request a chain of options on futures contracts.
 
@@ -2976,14 +2970,14 @@ class LookupConn(FeedConn):
         else:
             return data
 
-    def request_equity_option_chain(self, symbol: str, opt_type: str = 'pc',
-                                    month_codes: str = None,
-                                    near_months: int = None,
-                                    include_binary: bool = True,
-                                    filt_type: int = 0,
-                                    filt_val_1: float = None,
-                                    filt_val_2: float = None,
-                                    timeout: int = None) -> dict:
+    def request_equity_option_chain(self, symbol, opt_type = 'pc',
+                                    month_codes = None,
+                                    near_months = None,
+                                    include_binary = True,
+                                    filt_type = 0,
+                                    filt_val_1 = None,
+                                    filt_val_2 = None,
+                                    timeout = None):
         """
         Request a chain of options on an equity.
 
@@ -3088,14 +3082,14 @@ class BarConn(FeedConn):
              ('close_p', 'f8'), ('tot_vlm', 'u8'), ('prd_vlm', 'u8'),
              ('num_trds', 'u8')])
 
-    def __init__(self, name: str = "BarConn", host: str = host,
-                 port: int = port):
-        super().__init__(name, host, port)
+    def __init__(self, name = "BarConn", host = host,
+                 port = port):
+        FeedConn.__init__(self, name, host, port)
         self._set_message_mappings()
         self._empty_interval_msg = np.zeros(1, dtype=BarConn.interval_data_type)
 
-    def _set_message_mappings(self) -> None:
-        super()._set_message_mappings()
+    def _set_message_mappings(self):
+        FeedConn._set_message_mappings(self)
         self._pf_dict['n'] = self._process_invalid_symbol
         self._pf_dict['B'] = self._process_bars
         self._sm_dict["REPLACED PREVIOUS WATCH"] = self._process_replaced_watch
@@ -3103,7 +3097,7 @@ class BarConn(FeedConn):
             "SYMBOL LIMIT REACHED"] = self._process_symbol_limit_reached
         self._sm_dict["WATCHES"] = self._process_watch
 
-    def _process_invalid_symbol(self, fields: Sequence[str]) -> None:
+    def _process_invalid_symbol(self, fields):
         """Called when a request is made with an invalid symbol."""
         assert len(fields) > 1
         assert fields[0] == 'n'
@@ -3111,7 +3105,7 @@ class BarConn(FeedConn):
         for listener in self._listeners:
             listener.process_invalid_symbol(bad_sym)
 
-    def _process_replaced_watch(self, fields: Sequence[str]):
+    def _process_replaced_watch(self, fields):
         """Called when a request supersedes an prior interval request."""
         assert len(fields) > 2
         assert fields[0] == 'S'
@@ -3120,7 +3114,7 @@ class BarConn(FeedConn):
         for listener in self._listeners:
             listener.process_replaced_previous_watch(symbol)
 
-    def _process_symbol_limit_reached(self, fields: Sequence[str]) -> None:
+    def _process_symbol_limit_reached(self, fields):
         """Handle IQFeed telling us the symbol limit has been reached."""
         assert len(fields) > 2
         assert fields[0] == 'S'
@@ -3129,7 +3123,7 @@ class BarConn(FeedConn):
         for listener in self._listeners:
             listener.process_symbol_limit_reached(sym)
 
-    def _process_watch(self, fields: Sequence[str]) -> None:
+    def _process_watch(self, fields):
         """Process a watches message."""
         assert len(fields) > 3
         assert fields[0] == 'S'
@@ -3142,7 +3136,7 @@ class BarConn(FeedConn):
         for listener in self._listeners:
             listener.process_watch(symbol, interval, request_id)
 
-    def _process_bars(self, fields: Sequence[str]):
+    def _process_bars(self, fields):
         """Parse bar data and call appropriate callback."""
         assert len(fields) > 10
         assert fields[0][0] == "B" and fields[1][0] == "B"
@@ -3173,10 +3167,10 @@ class BarConn(FeedConn):
         else:
             raise UnexpectedField("Bad bar type in BarConn")
 
-    def watch(self, symbol: str, interval_len: int, interval_type: str = None,
-              bgn_flt: datetime.time = None, end_flt: datetime.time = None,
-              update: int = None, bgn_bars: datetime.datetime = None,
-              lookback_days: int = None, lookback_bars: int = None) -> None:
+    def watch(self, symbol, interval_len, interval_type = None,
+              bgn_flt = None, end_flt = None,
+              update = None, bgn_bars = None,
+              lookback_days = None, lookback_bars = None):
         """
         Request live interval (bar) data.
 
@@ -3228,15 +3222,15 @@ class BarConn(FeedConn):
             bf_str, ef_str, request_id, interval_type, update_str)
         self._send_cmd(bar_cmd)
 
-    def unwatch(self, symbol: str):
+    def unwatch(self, symbol):
         """Unwatch a specific symbol"""
         self._send_cmd("BR,%s" % symbol)
 
-    def unwatch_all(self) -> None:
+    def unwatch_all(self):
         """Unwatch all symbols."""
         self._send_cmd("S,UNWATCH ALL")
 
-    def request_watches(self) -> None:
+    def request_watches(self):
         """Request a list of all symbols we have subscribed."""
         self._send_cmd("S,REQUEST WATCHES\r\n")
 
@@ -3273,9 +3267,9 @@ class NewsConn(FeedConn):
 
     NewsCountMsg = namedtuple("NewsCountMsg", ("symbol", "count"))
 
-    def __init__(self, name: str = "NewsConn", host: str = FeedConn.host,
-                 port: int = port):
-        super().__init__(name, host, port)
+    def __init__(self, name = "NewsConn", host = FeedConn.host,
+                 port = port):
+        FeedConn.__init__(self, name, host, port)
         self._set_message_mappings()
         self._req_num = 0
         self._req_buf = {}
@@ -3285,15 +3279,15 @@ class NewsConn(FeedConn):
         self._req_err = {}
         self._req_lock = threading.RLock()
 
-    def _set_message_mappings(self) -> None:
-        super()._set_message_mappings()
+    def _set_message_mappings(self):
+        FeedConn._set_message_mappings(self)
         self._pf_dict['N'] = self._process_news_datum
 
     def _send_connect_message(self):
         # The history/lookup socket does not accept connect messages
         pass
 
-    def _process_news_datum(self, fields: Sequence[str]) -> None:
+    def _process_news_datum(self, fields):
         req_id = fields[0]
         if 'E' == fields[1]:
             # Error
@@ -3309,20 +3303,20 @@ class NewsConn(FeedConn):
             self._req_buf[req_id].append(fields)
             self._req_numlines[req_id] += 1
 
-    def _get_next_req_id(self) -> str:
+    def _get_next_req_id(self):
         with self._req_lock:
             req_id = "N_%.10d" % self._req_num
             self._req_num += 1
             return req_id
 
-    def _cleanup_request_data(self, req_id: str) -> None:
+    def _cleanup_request_data(self, req_id):
         with self._req_lock:
             del self._req_failed[req_id]
             del self._req_err[req_id]
             del self._req_buf[req_id]
             del self._req_numlines[req_id]
 
-    def _setup_request_data(self, req_id: str) -> None:
+    def _setup_request_data(self, req_id):
         with self._req_lock:
             self._req_buf[req_id] = deque()
             self._req_numlines[req_id] = 0
@@ -3330,7 +3324,7 @@ class NewsConn(FeedConn):
             self._req_err[req_id] = ""
             self._req_event[req_id] = threading.Event()
 
-    def _get_data_buf(self, req_id: str) -> namedtuple:
+    def _get_data_buf(self, req_id):
         with self._req_lock:
             buf = NewsConn._databuf(
                     failed=self._req_failed[req_id],
@@ -3340,7 +3334,7 @@ class NewsConn(FeedConn):
         self._cleanup_request_data(req_id)
         return buf
 
-    def _get_xml_message(self, req_id: str):
+    def _get_xml_message(self, req_id):
         """Convert a buffer into an XML ElementTree"""
         res = self._get_data_buf(req_id)
         if res.failed:
@@ -3349,7 +3343,7 @@ class NewsConn(FeedConn):
             raw_text = '\n'.join([''.join(line[1:]) for line in res.raw_data])
             return etree.fromstring(raw_text)
 
-    def _create_config_structure(self, xml_data: etree.Element) -> dict:
+    def _create_config_structure(self, xml_data):
         """Convert et.Element of configuration into nested list"""
         structure = xml_data.attrib
         structure["elem_type"] = xml_data.tag
@@ -3360,7 +3354,7 @@ class NewsConn(FeedConn):
             structure["sub_elems"] = descendants
         return structure
 
-    def request_news_config(self, timeout: int = None) -> dict:
+    def request_news_config(self, timeout = None):
         """
         News Configuration request
 
@@ -3387,7 +3381,7 @@ class NewsConn(FeedConn):
         return self._create_config_structure(xml_data)
 
     @staticmethod
-    def _create_headline_list(xml_data: etree.Element) -> List[NewsMsg]:
+    def _create_headline_list(xml_data):
         """Parse Headlines formatted as XML."""
         news_headlines = []
         for cur_headline in xml_data:
@@ -3421,10 +3415,10 @@ class NewsConn(FeedConn):
                                      headline=headline))
         return news_headlines
 
-    def request_news_headlines(self, sources: List[str] = None,
-                               symbols: List[str] = None,
-                               date: datetime.date = None, limit: int = 1000,
-                               timeout: int = None) -> List[NewsMsg]:
+    def request_news_headlines(self, sources = None,
+                               symbols = None,
+                               date = None, limit = 1000,
+                               timeout = None):
         """
         Get all current news headlines.
 
@@ -3482,7 +3476,7 @@ class NewsConn(FeedConn):
         return self._create_headline_list(xml_data)
 
     @staticmethod
-    def _create_news_story(xml_data: etree.Element) -> NewsStoryMsg:
+    def _create_news_story(xml_data):
         """Convert news stories into NewsStoryMsgs."""
         is_link = 'N'
         story = None
@@ -3494,8 +3488,8 @@ class NewsConn(FeedConn):
                 story = item.text
         return NewsConn.NewsStoryMsg(is_link=is_link, story=story)
 
-    def request_news_story(self, story_id: str,
-                           timeout: int = None) -> NewsStoryMsg:
+    def request_news_story(self, story_id,
+                           timeout = None):
         """
         Request the news story corresponding to a story id.
 
@@ -3524,7 +3518,7 @@ class NewsConn(FeedConn):
                 raise RuntimeError(err_msg)
         return self._create_news_story(xml_data)
 
-    def email_news_story(self, story_id: str, address: str) -> None:
+    def email_news_story(self, story_id, address):
         """
         Email the news story corresponding to a story id.
 
@@ -3543,7 +3537,7 @@ class NewsConn(FeedConn):
         self._send_cmd(req_cmd)
 
     @staticmethod
-    def _create_story_counts(xml_data: etree.Element) -> List[NewsCountMsg]:
+    def _create_story_counts(xml_data):
         """Parse story counts and return as NewsCountMsg."""
         story_counts = []
         for count_data in xml_data:
@@ -3553,11 +3547,11 @@ class NewsConn(FeedConn):
                             count=int(count_data.attrib['StoryCount'])))
         return story_counts
 
-    def request_story_counts(self, symbols: List[str],
-                             sources: List[str] = None,
-                             bgn_dt: datetime.date = None,
-                             end_dt: datetime.date = None,
-                             timeout: int = None) -> List[NewsCountMsg]:
+    def request_story_counts(self, symbols,
+                             sources = None,
+                             bgn_dt = None,
+                             end_dt = None,
+                             timeout = None):
         """
         Request News Story Counts.
 

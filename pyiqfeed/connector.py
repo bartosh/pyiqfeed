@@ -16,7 +16,6 @@ classes and put them in a list and do with Connect[list of Conn classes]:
 
 """
 
-from typing import List
 from .conn import FeedConn
 
 
@@ -38,7 +37,7 @@ class ConnConnector:
 
     """
 
-    def __init__(self, conn_list: List[FeedConn]):
+    def __init__(self, conn_list):
         self._conn_list = conn_list
 
     def __enter__(self):
